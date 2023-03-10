@@ -1,0 +1,20 @@
+Java
+
+Normal multiplication:
+600 0.477    gigaflops : 0.9056
+1000 1.658   gigaflops : 1.2062
+1400 5.485   gigaflops : 1.0005
+1800 20.105  gigaflops : 0.5801
+2200 41.445  gigaflops : 0.5138
+2600 72.284  gigaflops : 0.4863
+3000 120.21  gigaflops : 0.4492
+
+
+Line multiplication:
+600 0.479    gigaflops : 0.9018
+1000 0.698   gigaflops : 2.8653
+1400 2.052   gigaflops : 2.6744
+1800 3.962   gigaflops : 2.9439
+2200 7.352   gigaflops : 2.8966
+2600 12.221  gigaflops : 2.8763
+3000 18.796  gigaflops : 2.8729
