@@ -5,7 +5,7 @@ import java.util.*;
 public class GameClient {
     public static void main(String[] args) {
         try {
-            Socket socket = new Socket("localhost", 8800);
+            Socket socket = new Socket("localhost", 7200);
             System.out.println("Connected to server.");
 
             DataInputStream inputStream = new DataInputStream(socket.getInputStream());
@@ -45,18 +45,29 @@ public class GameClient {
                 if (response.startsWith("Incorrect username or password")) {
                     return;
                 }
+
             } else {
                 System.out.println(inputStream.readUTF());
                 return;
             }
 
+            // Play the game
+            while (true) {
+                // Get the guess prompt
+                System.out.println(inputStream.readUTF());
+                
+                // Get the guess from the user
+                String guess = scanner.nextLine();
+                outputStream.writeUTF(guess);
+                
+                // Get the result
+                System.out.println(inputStream.readUTF());
+            }
+            
+        } catch (EOFException e) {
+            System.out.println("Connection to server lost.");
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 }
-/**
-        } catch (EOFException e) {
-                System.out.println("Connection to server lost.");
-                } catch (IOException e) {
-                e.printStackTrace();  **/

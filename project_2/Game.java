@@ -42,7 +42,7 @@ public class Game {
                     if (!hasGuessed[i]) {
                         int guess;
                         try {
-                            guess = inputStreams.get(i).readInt();
+                            guess = Integer.parseInt(inputStreams.get(i).readUTF());
                             System.out.println("Player " + (i+1) + " guessed " + guess);
                             int distance = Math.abs(guess - targetNumber);
                             System.out.println("Distance from target: " + distance);
@@ -56,7 +56,7 @@ public class Game {
                         hasGuessed[i] = true;
                         numberOfGuesses++;
                     }
-                }
+}
             }
 
             // Determine the winner

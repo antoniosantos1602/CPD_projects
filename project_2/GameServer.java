@@ -5,6 +5,7 @@ import java.util.*;
 public class GameServer {
 
     private static Map<String, String> userPasswords = new HashMap<>();
+    private static final int numberOfPlayers = 3; // Set the number
 
     public static void main(String[] args) {
         // Load user passwords from file
@@ -25,7 +26,7 @@ public class GameServer {
         }
 
         try {
-            ServerSocket serverSocket = new ServerSocket(8800);
+            ServerSocket serverSocket = new ServerSocket(7200);
 
             // Wait for all players to connect for 30 seconds
             List<Socket> userSockets = new ArrayList<>();
@@ -66,7 +67,7 @@ public class GameServer {
                             System.out.println("Failed to save user password.");
                         }
 
-                        out.writeUTF("Registration successful, you can now play the game.");
+                        out.writeUTF("Registration successful, waiting for other players...");
                     } else if ("login".equals(choice)) {
                         out.writeUTF("Please type your username:");
                         String username = in.readUTF();
@@ -80,10 +81,16 @@ public class GameServer {
                             continue;
                         }
 
-                        out.writeUTF("Login successful, you can now play the game.");
+                        out.writeUTF("Login successful, waiting for other players...");
                     } else {
                         out.writeUTF("Invalid choice. Connection will be closed.");
                         socket.close();
+                    }
+
+                                        // Start the game after successful authentication
+                    if (userSockets.size() >= numberOfPlayers) {
+                        new Thread(new GameThread(new ArrayList<>(userSockets))).start();
+                        userSockets.clear();  // Clear the list for the next batch of players
                     }
                 } catch (SocketTimeoutException e) {
                     break; // timeout reached, exit loop
