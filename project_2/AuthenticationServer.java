@@ -6,7 +6,7 @@ public class AuthenticationServer {
 
     private static Map<String, String> userPasswords = new HashMap<>();
 
-    public static List<Socket> authenticatePlayers(int numberOfPlayers, int timeout) {
+    public static Map<String, Socket> authenticatePlayers(int numberOfPlayers, int timeout) {
         // Load user passwords from file
         try (BufferedReader reader = new BufferedReader(new FileReader("userPasswords.txt"))) {
             String line;
@@ -24,7 +24,7 @@ public class AuthenticationServer {
             System.out.println("No existing user passwords found.");
         }
 
-        List<Socket> userSockets = new ArrayList<>();
+        Map<String, Socket> userSockets = new HashMap<>();
 
         try {
             ServerSocket serverSocket = new ServerSocket(7200);
@@ -35,8 +35,7 @@ public class AuthenticationServer {
             while (true) {
                 try {
                     Socket socket = serverSocket.accept();
-                    userSockets.add(socket);
-                    System.out.println("Player " + (userSockets.size()) + " connected!");
+                    System.out.println("A player connected!");
 
                     DataInputStream in = new DataInputStream(socket.getInputStream());
                     DataOutputStream out = new DataOutputStream(socket.getOutputStream());
@@ -58,6 +57,8 @@ public class AuthenticationServer {
                         }
 
                         userPasswords.put(username, password);
+                        userSockets.put(username, socket); // Add to map
+
                         // Save username and password to file
                         try (FileWriter fw = new FileWriter("userPasswords.txt", true);
                              BufferedWriter bw = new BufferedWriter(fw);
@@ -80,6 +81,8 @@ public class AuthenticationServer {
                             socket.close();
                             continue;
                         }
+
+                        userSockets.put(username, socket); // Add to map
 
                         out.writeUTF("Login successful, waiting for other players...");
                     } else {

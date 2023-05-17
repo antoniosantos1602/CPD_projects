@@ -55,13 +55,24 @@ public class GameClient {
             while (true) {
                 // Get the guess prompt
                 System.out.println(inputStream.readUTF());
-                
+
                 // Get the guess from the user
                 String guess = scanner.nextLine();
                 outputStream.writeUTF(guess);
-                
+
                 // Get the result
-                System.out.println(inputStream.readUTF());
+                String result = inputStream.readUTF();
+                System.out.println(result);
+
+                // Check if the user wants to logout
+                System.out.println("Type 'logout' to logout or press Enter to continue playing:");
+                String logout = scanner.nextLine();
+                if ("logout".equals(logout)) {
+                    outputStream.writeUTF(logout);
+                    break;
+                } else {
+                    outputStream.writeUTF("continue");
+                }
             }
             
         } catch (EOFException e) {
