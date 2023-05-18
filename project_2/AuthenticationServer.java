@@ -27,7 +27,7 @@ public class AuthenticationServer {
         Map<String, Socket> userSockets = new HashMap<>();
 
         try {
-            ServerSocket serverSocket = new ServerSocket(7200);
+            ServerSocket serverSocket = new ServerSocket(8055);
 
             // Wait for all players to connect for 30 seconds
             System.out.println("Waiting for players to connect...");

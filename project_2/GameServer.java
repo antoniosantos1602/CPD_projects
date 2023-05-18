@@ -1,26 +1,29 @@
-
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.LinkedList;
 
 public class GameServer {
 
-    private static final int numberOfPlayers = 3; // Set the number
-    
-    private static final int timeout = 30000; // 30 seconds
-    
-    private static final Queue<String> waitingPlayers = new LinkedList<>(); // fila de jogadores
+    private static final int numberOfPlayers = 3;
+    private static final int timeout = 30000;
+    private static final Queue<String> waitingPlayers = new LinkedList<>();
+    private static final Map<String, Socket> usernameToSocketMap = new HashMap<>();
+    private static ScoreManager scoreManager = new ScoreManager();
 
-    private static final Map<String, Socket> usernameToSocketMap = new HashMap<>(); // Mapa de associação entre nome de usuário e socket
-
-
-        public static void main(String[] args) {
+    public static void main(String[] args) {
         new Thread(() -> {
             while (true) {
                 Map<String, Socket> newPlayers = AuthenticationServer.authenticatePlayers(numberOfPlayers, timeout);
                 usernameToSocketMap.putAll(newPlayers);
                 waitingPlayers.addAll(newPlayers.keySet());
-                
+
                 if (waitingPlayers.size() >= numberOfPlayers) {
                     List<Socket> currentPlayers = new ArrayList<>();
                     for (int i = 0; i < numberOfPlayers; i++) {
@@ -34,21 +37,6 @@ public class GameServer {
         }).start();
     }
 
-    
-    private static List<List<Socket>> divideIntoTeams(List<Socket> userSockets) {
-        List<List<Socket>> teams = new ArrayList<>();
-        for (int i = 0; i < userSockets.size(); i += 2) {
-            List<Socket> team = new ArrayList<>();
-            team.add(userSockets.get(i));
-            if (i + 1 < userSockets.size()) {
-                team.add(userSockets.get(i + 1));
-            }
-            teams.add(team);
-        }
-        return teams;
-    }
-    
-    
     private static class GameThread implements Runnable {
         private List<Socket> team;
 
@@ -58,12 +46,8 @@ public class GameServer {
 
         @Override
         public void run() {
-            Game game = new Game(team.size(), team);
+            Game game = new Game(team.size(), team, scoreManager);
             game.start();
         }
     }
 }
-
-
-
-

@@ -1,15 +1,20 @@
 import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 public class Game {
     private List<Socket> userSockets;
     private int numberOfPlayers;
     private int targetNumber;
+    private ScoreManager scoreManager;
 
-    public Game(int players, List<Socket> userSockets) {
+    public Game(int players, List<Socket> userSockets, ScoreManager scoreManager) {
         this.numberOfPlayers = players;
         this.userSockets = userSockets;
+        this.scoreManager = scoreManager;
     }
 
     public void start() {
@@ -43,7 +48,7 @@ public class Game {
                         int guess;
                         try {
                             guess = Integer.parseInt(inputStreams.get(i).readUTF());
-                            System.out.println("Player " + (i+1) + " guessed " + guess);
+                            System.out.println("Player " + (i + 1) + " guessed " + guess);
                             int distance = Math.abs(guess - targetNumber);
                             System.out.println("Distance from target: " + distance);
                         } catch (IOException e) {
@@ -56,7 +61,7 @@ public class Game {
                         hasGuessed[i] = true;
                         numberOfGuesses++;
                     }
-}
+                }
             }
 
             // Determine the winner
@@ -70,21 +75,27 @@ public class Game {
                 }
             }
 
-            // Send result to all clients
+            // Send result to all clients and update scores
             for (int i = 0; i < numberOfPlayers; i++) {
                 try {
                     int distance = Math.abs(guesses[i] - targetNumber);
                     if (i == winnerIndex) {
                         outputStreams.get(i).writeUTF("Congratulations, you won! The target number was " + targetNumber + " and you failed by " + distance);
+                        scoreManager.updateScore(String.valueOf(i), 5);
+                    } else if (distance < closestGuess) {
+                        outputStreams.get(i).writeUTF("You were close! The target number was " + targetNumber + " and you failed by " + distance);
+                        scoreManager.updateScore(String.valueOf(i), 1);
                     } else {
-
-                        outputStreams.get(i).writeUTF("Sorry, you lost. The target number was " + targetNumber + " and your guess was " + guesses[i] + ". You were " + distance + " away from the target.");
+                        outputStreams.get(i).writeUTF("Sorry, you lost. The target number was " + targetNumber + " and your guess was " + guesses[i]);
+                        scoreManager.updateScore(String.valueOf(i), 0);
                     }
                 } catch (IOException e) {
                     System.err.println("Failed to send game result to player " + (i + 1) + ".");
                 }
             }
 
+            // Save scores to file
+            scoreManager.saveScores();
 
         } catch (IOException e) {
             e.printStackTrace();

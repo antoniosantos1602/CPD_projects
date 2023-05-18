@@ -5,7 +5,7 @@ import java.util.*;
 public class GameClient {
     public static void main(String[] args) {
         try {
-            Socket socket = new Socket("localhost", 7200);
+            Socket socket = new Socket("localhost", 8055);
             System.out.println("Connected to server.");
 
             DataInputStream inputStream = new DataInputStream(socket.getInputStream());
@@ -65,16 +65,14 @@ public class GameClient {
                 System.out.println(result);
 
                 // Check if the user wants to logout
-                System.out.println("Type 'logout' to logout or press Enter to continue playing:");
-                String logout = scanner.nextLine();
-                if ("logout".equals(logout)) {
-                    outputStream.writeUTF(logout);
+                System.out.println("Press Enter to continue playing or type 'logout' to exit:");
+                String input = scanner.nextLine();
+                if ("logout".equals(input)) {
+                    outputStream.writeUTF(input);
                     break;
-                } else {
-                    outputStream.writeUTF("continue");
                 }
             }
-            
+
         } catch (EOFException e) {
             System.out.println("Connection to server lost.");
         } catch (IOException e) {
