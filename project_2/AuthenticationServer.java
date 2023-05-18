@@ -4,9 +4,13 @@ import java.util.*;
 
 public class AuthenticationServer {
 
+    private Socket socket;
+    private static String user;
+
+
     private static Map<String, String> userPasswords = new HashMap<>();
 
-    public static Map<String, Socket> authenticatePlayers(int numberOfPlayers, int timeout) {
+    public static String authenticatePlayers(Socket socket) throws IOException {
         // Load user passwords from file
         try (BufferedReader reader = new BufferedReader(new FileReader("userPasswords.txt"))) {
             String line;
@@ -24,18 +28,13 @@ public class AuthenticationServer {
             System.out.println("No existing user passwords found.");
         }
 
-        Map<String, Socket> userSockets = new HashMap<>();
+        //Map<String, Socket> userSockets = new HashMap<>();
 
-        try {
-            ServerSocket serverSocket = new ServerSocket(8055);
 
             // Wait for all players to connect for 30 seconds
             System.out.println("Waiting for players to connect...");
-            serverSocket.setSoTimeout(timeout); // set timeout for 30 seconds
-            while (true) {
-                try {
-                    Socket socket = serverSocket.accept();
-                    System.out.println("A player connected!");
+            //serverSocket.setSoTimeout(timeout); // set timeout for 30 seconds
+
 
                     DataInputStream in = new DataInputStream(socket.getInputStream());
                     DataOutputStream out = new DataOutputStream(socket.getOutputStream());
@@ -53,11 +52,11 @@ public class AuthenticationServer {
                         if (userPasswords.containsKey(username)) {
                             out.writeUTF("Username already exists. Connection will be closed.");
                             socket.close();
-                            continue;
                         }
 
                         userPasswords.put(username, password);
-                        userSockets.put(username, socket); // Add to map
+                        user = username;
+                        //userSockets.put(username, socket); // Add to map
 
                         // Save username and password to file
                         try (FileWriter fw = new FileWriter("userPasswords.txt", true);
@@ -79,10 +78,12 @@ public class AuthenticationServer {
                         if (correctPassword == null || !correctPassword.equals(password)) {
                             out.writeUTF("Incorrect username or password. Connection will be closed.");
                             socket.close();
-                            continue;
+
                         }
 
-                        userSockets.put(username, socket); // Add to map
+                        //userSockets.put(username, socket); // Add to map
+
+                        user = username;
 
                         out.writeUTF("Login successful, waiting for other players...");
                     } else {
@@ -90,18 +91,7 @@ public class AuthenticationServer {
                         socket.close();
                     }
 
-                    if (userSockets.size() >= numberOfPlayers) {
-                        break; // Break when we have enough players
-                    }
-                } catch (SocketTimeoutException e) {
-                    break; // timeout reached, exit loop
-                }
-            }
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return userSockets;
+        return user;
     }
 }

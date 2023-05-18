@@ -1,17 +1,15 @@
 import java.io.*;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
 public class Game {
-    private List<Socket> userSockets;
     private int numberOfPlayers;
+    private Map<String, Socket> userSockets;
     private int targetNumber;
     private ScoreManager scoreManager;
 
-    public Game(int players, List<Socket> userSockets, ScoreManager scoreManager) {
+    public Game(int players, Map<String, Socket> userSockets, ScoreManager scoreManager) {
         this.numberOfPlayers = players;
         this.userSockets = userSockets;
         this.scoreManager = scoreManager;
@@ -24,43 +22,31 @@ public class Game {
 
             System.out.println("Starting game with " + numberOfPlayers + " players.");
 
-            // Create input and output streams for each client socket
-            List<DataInputStream> inputStreams = new ArrayList<>();
-            List<DataOutputStream> outputStreams = new ArrayList<>();
-            for (Socket socket : userSockets) {
-                inputStreams.add(new DataInputStream(socket.getInputStream()));
-                outputStreams.add(new DataOutputStream(socket.getOutputStream()));
-            }
-
             // Play the game
-            int[] guesses = new int[numberOfPlayers];
             boolean[] hasGuessed = new boolean[numberOfPlayers];
             int numberOfGuesses = 0;
+            int[] guesses = new int[numberOfPlayers];
             while (numberOfGuesses < numberOfPlayers) {
-                // Send guess prompt to all clients
-                for (DataOutputStream outputStream : outputStreams) {
-                    outputStream.writeUTF("Enter your guess: ");
-                }
-
                 // Read guesses from clients
-                for (int i = 0; i < numberOfPlayers; i++) {
-                    if (!hasGuessed[i]) {
-                        int guess;
+                int playerIndex = 0;
+                for (Map.Entry<String, Socket> entry : userSockets.entrySet()) {
+                    String username = entry.getKey();
+                    Socket socket = entry.getValue();
+                    if (!hasGuessed[playerIndex]) {
+                        DataOutputStream outputStream = new DataOutputStream(socket.getOutputStream());
+                        outputStream.writeUTF("Enter your guess: ");
                         try {
-                            guess = Integer.parseInt(inputStreams.get(i).readUTF());
-                            System.out.println("Player " + (i + 1) + " guessed " + guess);
-                            int distance = Math.abs(guess - targetNumber);
-                            System.out.println("Distance from target: " + distance);
-                        } catch (IOException e) {
-                            System.err.println("Failed to receive guess from player " + (i + 1) + ".");
-                            hasGuessed[i] = true;
+                            DataInputStream inputStream = new DataInputStream(socket.getInputStream());
+                            int guess = Integer.parseInt(inputStream.readUTF());
+                            System.out.println("Player " + username + " guessed " + guess);
+                            guesses[playerIndex] = guess;
+                            hasGuessed[playerIndex] = true;
                             numberOfGuesses++;
-                            continue;
+                        } catch (IOException e) {
+                            System.err.println("Failed to receive guess from player " + username + ".");
                         }
-                        guesses[i] = guess;
-                        hasGuessed[i] = true;
-                        numberOfGuesses++;
                     }
+                    playerIndex++;
                 }
             }
 
@@ -76,22 +62,27 @@ public class Game {
             }
 
             // Send result to all clients and update scores
-            for (int i = 0; i < numberOfPlayers; i++) {
+            int playerIndex = 0;
+            for (Map.Entry<String, Socket> entry : userSockets.entrySet()) {
+                String username = entry.getKey();
+                Socket socket = entry.getValue();
                 try {
-                    int distance = Math.abs(guesses[i] - targetNumber);
-                    if (i == winnerIndex) {
-                        outputStreams.get(i).writeUTF("Congratulations, you won! The target number was " + targetNumber + " and you failed by " + distance);
-                        scoreManager.updateScore(String.valueOf(i), 5);
+                    DataOutputStream outputStream = new DataOutputStream(socket.getOutputStream());
+                    int distance = Math.abs(guesses[playerIndex] - targetNumber);
+                    if (playerIndex == winnerIndex) {
+                        outputStream.writeUTF("Congratulations, you won! The target number was " + targetNumber + " and you failed by " + distance);
+                        scoreManager.updateScore(username, 5);
                     } else if (distance < closestGuess) {
-                        outputStreams.get(i).writeUTF("You were close! The target number was " + targetNumber + " and you failed by " + distance);
-                        scoreManager.updateScore(String.valueOf(i), 1);
+                        outputStream.writeUTF("You were close! The target number was " + targetNumber + " and you failed by " + distance);
+                        scoreManager.updateScore(username, 1);
                     } else {
-                        outputStreams.get(i).writeUTF("Sorry, you lost. The target number was " + targetNumber + " and your guess was " + guesses[i]);
-                        scoreManager.updateScore(String.valueOf(i), 0);
+                        outputStream.writeUTF("Sorry, you lost. The target number was " + targetNumber + " and your guess was " + guesses[playerIndex]);
+                        scoreManager.updateScore(username, 0);
                     }
                 } catch (IOException e) {
-                    System.err.println("Failed to send game result to player " + (i + 1) + ".");
+                    System.err.println("Failed to send game result to player " + username + ".");
                 }
+                playerIndex++;
             }
 
             // Save scores to file
@@ -101,7 +92,7 @@ public class Game {
             e.printStackTrace();
         } finally {
             // Close all sockets
-            for (Socket socket : userSockets) {
+            for (Socket socket : userSockets.values()) {
                 try {
                     socket.close();
                 } catch (IOException e) {
